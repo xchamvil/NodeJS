@@ -10,6 +10,20 @@ var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promoRouter = require('./routes/promoRouter');
 
+const mongoose = require('mongoose');
+const Dishes = require('./models/dishes');
+const Leaders = require('./models/leaders');
+const Promotions = require('./models/promotions');
+
+const url = 'mongodb://localhost:27017/conFusion';
+const connect = mongoose.connect(url);
+
+connect.then((db) => {
+  console.log('Correctly connected to the server');
+},(err)=> {
+  console.log(err);
+});
+
 var app = express();
 
 // view engine setup
@@ -26,7 +40,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/dishes',dishRouter);
 app.use('/leaders',leaderRouter);
-app.use('/promo',promoRouter); 
+app.use('/promotions',promoRouter); 
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -43,5 +57,30 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+function auth (req,res,next) {
+  console.log(req.headers);
+  var authHeader = req.headers.authorization;
+  if(!authHeader) {
+    var err = new Error('You are not authenticated');
+    res.setHeader('WWW-Authenticate','Basic');
+    err.status = 401;
+    next(err);
+    return;
+  }
+
+  var auth = new.Buffer.from(authHeader.split(' ')[1],'base-64').toString().split(':');
+  var user = auth[0];
+  var pass = auth[1];
+  if(user == 'admin' && pass == 'password'){
+    next();
+  } else {
+    var err = new Error('You are not authenticated');
+    res.setHeader('WWW-Authenticate','Basic');
+    err.status = 401;
+    next(err);
+  }
+
+}
 
 module.exports = app;
