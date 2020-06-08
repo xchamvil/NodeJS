@@ -83,4 +83,6 @@ function auth (req,res,next) {
 
 }
 
+app.use(auth);
+
 module.exports = app;
